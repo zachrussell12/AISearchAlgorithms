@@ -266,13 +266,14 @@ def ID_Search(providedDepth= 0):
     initialState = ["ln", "hw", False, False]
     expandedNodesStack = []
     visitedStates = []
+    treeRepresentation = {f"{initialState}": []}
     checkGoalState = initialState.copy()
     goalReached = False
     totalcost = 0
 
     #print("STARTING SEARCH WITH A DEPTH OF: ", depth)
 
-    while (j < depth and goalReached == False):
+    while (goalReached == False):
 
         currentState = []
 
@@ -281,60 +282,71 @@ def ID_Search(providedDepth= 0):
         if j == 0:
             currentState = initialState.copy()
         else:
-            currentState = expandedNodesStack.pop()
+            currentState = expandedNodesStack.pop(0)
+            treeRepresentation[f"{currentState}"] = []
 
         #print("*" * 30)
         #print("Current State: ", currentState)
 
         visitedStates.append(currentState)
 
-        for i in range(2):
-            if i == 0:
-                travelPaths["HP"] = (locater.getConnections(currentState[i]))
-            else:
-                travelPaths["AD"] = (locater.getConnections(currentState[i]))
+        if j < depth:
+            for i in range(2):
+                if i == 0:
+                    travelPaths["HP"] = (locater.getConnections(currentState[i]))
+                else:
+                    travelPaths["AD"] = (locater.getConnections(currentState[i]))
 
-        #print(travelPaths)
+            #print(travelPaths)
 
-        for i in range(len(travelPaths["HP"])):
-            if [travelPaths["HP"][i], currentState[1], currentState[2], currentState[3]] in visitedStates:
-                pass
-            else:
-                expandedNodesStack.append([travelPaths["HP"][i], currentState[1], currentState[2], currentState[3]])
-
-        for i in range(len(travelPaths["AD"])):
-            if [currentState[0], travelPaths["AD"][i], currentState[2], currentState[3]] in visitedStates:
-                pass
-            else:
-                expandedNodesStack.append([currentState[0], travelPaths["AD"][i], currentState[2], currentState[3]])
-
-        if locater.checkHX1(currentState[0]) or locater.checkHX1(currentState[1]):
-            if [currentState[0], currentState[1], True, currentState[3]] in visitedStates:
-                pass
-            else:
-                expandedNodesStack.append([currentState[0], currentState[1], True, currentState[3]])
-
-        for state in expandedNodesStack:
-            if state[2] == True and state[3] == True:
-                goalReached = True
-                checkGoalState = state
-                
-
-        if goalReached == False:
-            if locater.checkHX2(currentState[0]) or locater.checkHX2(currentState[1]):
-                if [currentState[0], currentState[1], currentState[2], True] in visitedStates:
+            for i in range(len(travelPaths["HP"])):
+                if [travelPaths["HP"][i], currentState[1], currentState[2], currentState[3]] in visitedStates:
                     pass
                 else:
-                    expandedNodesStack.append([currentState[0], currentState[1], currentState[2], True])
+                    expandedNodesStack.append([travelPaths["HP"][i], currentState[1], currentState[2], currentState[3]])
+                    treeRepresentation[f"{currentState}"].append([travelPaths["HP"][i], currentState[1], currentState[2], currentState[3]])
+
+            for i in range(len(travelPaths["AD"])):
+                if [currentState[0], travelPaths["AD"][i], currentState[2], currentState[3]] in visitedStates:
+                    pass
+                else:
+                    expandedNodesStack.append([currentState[0], travelPaths["AD"][i], currentState[2], currentState[3]])
+                    treeRepresentation[f"{currentState}"].append([currentState[0], travelPaths["AD"][i], currentState[2], currentState[3]])
+
+            if locater.checkHX1(currentState[0]) or locater.checkHX1(currentState[1]):
+                if [currentState[0], currentState[1], True, currentState[3]] in visitedStates:
+                    pass
+                else:
+                    expandedNodesStack.append([currentState[0], currentState[1], True, currentState[3]])
+                    treeRepresentation[f"{currentState}"].append([currentState[0], currentState[1], True, currentState[3]])
+
 
             for state in expandedNodesStack:
                 if state[2] == True and state[3] == True:
                     goalReached = True
                     checkGoalState = state
+                    
 
+            if goalReached == False:
+                if locater.checkHX2(currentState[0]) or locater.checkHX2(currentState[1]):
+                    if [currentState[0], currentState[1], currentState[2], True] in visitedStates:
+                        pass
+                    else:
+                        expandedNodesStack.append([currentState[0], currentState[1], currentState[2], True])
+                        treeRepresentation[f"{currentState}"].append([currentState[0], currentState[1], currentState[2], True])
+
+                for state in expandedNodesStack:
+                    if state[2] == True and state[3] == True:
+                        goalReached = True
+                        checkGoalState = state
+        else:
+            #print("DEPTH REACHED CAN'T EXPAND")
+            pass
 
         #print("Possible States: ",  expandedNodesStack)
         #print("*" * 30)
+        if len(expandedNodesStack) == 0:
+            break
 
         j = j + 1
 
@@ -342,34 +354,45 @@ def ID_Search(providedDepth= 0):
         #print("GOAL NOT REACHED. RESTARTING SEARCH FROM BEGINNING")
         ID_Search(depth+1)
     else:
-        #print("GOAL REACHED")
+        print("GOAL REACHED")
         print("Goal State Reached: ", checkGoalState)
-        visitedStates.append(checkGoalState)
+        searchState = checkGoalState
+        pathing = []
+        
+        while searchState != initialState:
+            for i in range(len(visitedStates)):
+                for j in range(len(treeRepresentation[f"{visitedStates[i]}"])):
+                    if treeRepresentation[f"{visitedStates[i]}"][j] == searchState:
+                        pathing.insert(0, searchState)
+                        searchState = visitedStates[i]
 
-        for i in range(len(visitedStates)):
-            if i == len(visitedStates)-1:
-                pass
-            elif visitedStates[i][0] != visitedStates[i+1][0]:
-                totalcost += HP.move()
-            elif visitedStates[i][1] != visitedStates[i+1][1]:
-                totalcost += AD.move()
-            elif visitedStates[i][2] != visitedStates[i+1][2]:
-                if visitedStates[i+1][0] == "hm":
-                    totalcost += HP.dstryHX()
-                else:
-                    totalcost += AD.dstryHX()
-            else:
-                if visitedStates[i+1][0] == "gs":
-                    totalcost += HP.dstryHX()
-                else:
-                    totalcost += AD.dstryHX()
-                
+        pathing.insert(0, initialState)
+        
         print("Pathing: ")
-        for state in visitedStates:
-            if state == visitedStates[len(visitedStates)-1]:
+        for state in pathing:
+            if state == pathing[len(pathing)-1]:
                 print(f"{state}")
             else:
                 print(f"{state} -> ", end="")
+
+        for i in range(len(pathing)):
+            if i == len(pathing)-1:
+                pass
+            elif pathing[i][0] != pathing[i+1][0]:
+                totalcost += HP.move()
+            elif pathing[i][1] != pathing[i+1][1]:
+                totalcost += AD.move()
+            elif pathing[i][2] != pathing[i+1][2]:
+                if pathing[i+1][0] == "hm":
+                    totalcost += HP.dstryHX()
+                else:
+                    totalcost += AD.dstryHX()
+            else:
+                if pathing[i+1][0] == "gs":
+                    totalcost += HP.dstryHX()
+                else:
+                    totalcost += AD.dstryHX()
+
         print("Total Cost: ", totalcost)
         print("Depth Reached: ", depth)
 
@@ -586,22 +609,38 @@ def A_STAR_Search():
                 pass
             else:
                 if locater.checkHX1(currentState[0]):
-                    expandedNodesStack.append([currentState[0], currentState[1], True, currentState[3], currentState[4] + HP.dstryHX() + 1])
-                    treeRepresentation[f"{currentState}"].append([currentState[0], currentState[1], True, currentState[3], currentState[4] + HP.dstryHX() + 1])
+                    if currentState[3] == True:
+                        expandedNodesStack.append([currentState[0], currentState[1], True, currentState[3], currentState[4] + HP.dstryHX() + 0])
+                        treeRepresentation[f"{currentState}"].append([currentState[0], currentState[1], True, currentState[3], currentState[4] + HP.dstryHX() + 0])
+                    else:
+                        expandedNodesStack.append([currentState[0], currentState[1], True, currentState[3], currentState[4] + HP.dstryHX() + 1])
+                        treeRepresentation[f"{currentState}"].append([currentState[0], currentState[1], True, currentState[3], currentState[4] + HP.dstryHX() + 1])
                 else:
-                    expandedNodesStack.append([currentState[0], currentState[1], True, currentState[3], currentState[4] + AD.dstryHX() + 1])
-                    treeRepresentation[f"{currentState}"].append([currentState[0], currentState[1], True, currentState[3], currentState[4] + AD.dstryHX() + 1])
+                    if currentState[3] == True:
+                        expandedNodesStack.append([currentState[0], currentState[1], True, currentState[3], currentState[4] + AD.dstryHX() + 0])
+                        treeRepresentation[f"{currentState}"].append([currentState[0], currentState[1], True, currentState[3], currentState[4] + AD.dstryHX() + 0])
+                    else:
+                        expandedNodesStack.append([currentState[0], currentState[1], True, currentState[3], currentState[4] + AD.dstryHX() + 1])
+                        treeRepresentation[f"{currentState}"].append([currentState[0], currentState[1], True, currentState[3], currentState[4] + AD.dstryHX() + 1])
 
         if locater.checkHX2(currentState[0]) or locater.checkHX2(currentState[1]):
             if [currentState[0], currentState[1], currentState[2], True] in visitedStates:
                 pass
             else:
                 if locater.checkHX2(currentState[0]):
-                    expandedNodesStack.append([currentState[0], currentState[1], currentState[2], True, currentState[4] + HP.dstryHX() + 1])
-                    treeRepresentation[f"{currentState}"].append([currentState[0], currentState[1], currentState[2], True, currentState[4] + HP.dstryHX() + 1])
+                    if currentState[2] == True:
+                        expandedNodesStack.append([currentState[0], currentState[1], currentState[2], True, currentState[4] + HP.dstryHX() + 0])
+                        treeRepresentation[f"{currentState}"].append([currentState[0], currentState[1], currentState[2], True, currentState[4] + HP.dstryHX() + 0])
+                    else:
+                        expandedNodesStack.append([currentState[0], currentState[1], currentState[2], True, currentState[4] + HP.dstryHX() + 1])
+                        treeRepresentation[f"{currentState}"].append([currentState[0], currentState[1], currentState[2], True, currentState[4] + HP.dstryHX() + 1])
                 else:
-                    expandedNodesStack.append([currentState[0], currentState[1], currentState[2], True, currentState[4] + AD.dstryHX() + 1])
-                    treeRepresentation[f"{currentState}"].append([currentState[0], currentState[1], currentState[2], True, currentState[4] + AD.dstryHX() + 1])
+                    if currentState[2] == True:
+                        expandedNodesStack.append([currentState[0], currentState[1], currentState[2], True, currentState[4] + AD.dstryHX() + 0])
+                        treeRepresentation[f"{currentState}"].append([currentState[0], currentState[1], currentState[2], True, currentState[4] + AD.dstryHX() + 0])
+                    else:
+                        expandedNodesStack.append([currentState[0], currentState[1], currentState[2], True, currentState[4] + AD.dstryHX() + 1])
+                        treeRepresentation[f"{currentState}"].append([currentState[0], currentState[1], currentState[2], True, currentState[4] + AD.dstryHX() + 1])
 
 
         #print("Possible States: ",  expandedNodesStack)
