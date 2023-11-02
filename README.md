@@ -14,6 +14,6 @@ The following algorithms created for this project included:
 - Uniform Cost Search
 - A* Search
 
-The hueristic used for the A* search was considered to be admissible and involved acting like each character being able to destroy horcruxes from a distance.
+The hueristic used for the A* search was considered to be admissible and involved acting like each character is able to destroy horcruxes from a distance.
 
 The code can be ran on its own and does not require any outside files. For the sake of the assignment, the horcruxes are fixed in the two locations described in the assignment: Hogsmeade and Gringotts.
